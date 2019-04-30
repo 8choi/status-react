@@ -43,20 +43,16 @@
 
 (fx/defn navigate-back-button-clicked
   [{:keys [db] :as cofx}]
-  (let [screen-before (second (get db :navigation-stack))
-        navigate-to-browser? (contains? #{:wallet-sign-message-modal
-                                          :wallet-send-transaction-modal
-                                          :wallet-send-modal-stack} screen-before)]
-    (if (nil? screen-before)
-      (navigation/navigate-to-cofx cofx :accounts nil)
-      (if navigate-to-browser?
-        (fx/merge cofx
-                  {:db (assoc-in db [:hardwallet :on-card-connected] nil)}
-                  (models.wallet/discard-transaction)
-                  (navigation/navigate-to-cofx :browser nil))
-        (fx/merge cofx
-                  {:db (assoc-in db [:hardwallet :on-card-connected] nil)}
-                  (navigation/navigate-back))))))
+  (let [screen-before (set (take 4 (:navigation-stack db)))
+        navigate-to-browser? (contains? screen-before :browser-stack)]
+    (if navigate-to-browser?
+      (fx/merge cofx
+                {:db (assoc-in db [:hardwallet :on-card-connected] nil)}
+                (models.wallet/discard-transaction)
+                (navigation/navigate-to-cofx :browser nil))
+      (fx/merge cofx
+                {:db (assoc-in db [:hardwallet :on-card-connected] nil)}
+                (navigation/navigate-back)))))
 
 (fx/defn remove-pairing-from-account
   [{:keys [db]} {:keys [remove-instance-uid?]}]
