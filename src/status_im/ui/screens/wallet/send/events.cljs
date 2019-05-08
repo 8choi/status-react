@@ -353,7 +353,7 @@
 
 (re-frame/reg-fx
  ::hash-transaction
- (fn [{:keys [transaction all-tokens symbol chain on-completed]}]
+ (fn [{:keys [transaction on-completed]}]
    (status/hash-transaction (types/clj->json transaction) on-completed)))
 
 (re-frame/reg-fx
@@ -366,12 +366,23 @@
  (fn [{:keys [data on-completed]}]
    (status/hash-typed-data data on-completed)))
 
+(defn- prepare-keycard-transaction
+  [transaction from symbol chain all-tokens]
+  (if (= :ETH symbol)
+    (models.wallet/prepare-send-transaction from transaction)
+    (let [contract (:address (tokens/symbol->token all-tokens (keyword chain) symbol))
+          {:keys [gas gasPrice to from value]} (models.wallet/prepare-send-transaction from transaction)]
+      (merge (ethereum/call-params contract "transfer(address,uint256)" to value)
+             {:from     from
+              :gas      gas
+              :gasPrice gasPrice}))))
+
 (defn send-keycard-transaction
   [{{:keys [chain] :as db} :db}]
   (let [{:keys [symbol] :as transaction} (get-in db [:wallet :send-transaction])
         all-tokens (:wallet/all-tokens db)
         from (get-in db [:account/account :address])]
-    {::hash-transaction {:transaction  (models.wallet/prepare-send-transaction from transaction)
+    {::hash-transaction {:transaction  (prepare-keycard-transaction transaction from symbol chain all-tokens)
                          :all-tokens   all-tokens
                          :symbol       symbol
                          :chain        chain
