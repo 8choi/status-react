@@ -3,6 +3,7 @@
             [status-im.accounts.db :as accounts.db]
             [status-im.chaos-mode.core :as chaos-mode]
             [status-im.data-store.core :as data-store]
+            [status-im.ethereum.subscriptions :as ethereum.subscriptions]
             [status-im.fleet.core :as fleet]
             [status-im.i18n :as i18n]
             [status-im.models.transactions :as transactions]
@@ -144,6 +145,7 @@
          (fn [_]
            (when save-password?
              {:keychain/save-user-password [address password]}))
+         (ethereum.subscriptions/initialize)
          (tribute-to-talk/init)
          (mobile-network/on-network-status-change)
          (protocol/initialize-protocol)
